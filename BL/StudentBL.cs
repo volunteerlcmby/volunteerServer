@@ -1,20 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using DL;
 using Entity;
-
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 
 namespace BL
 {
    public class StudentBL : IStudentBL
     {
         IStudentDL studentdl;
+        IConfiguration _configuration;
 
-        public StudentBL(IStudentDL studentdl)
+
+
+        public StudentBL(IStudentDL studentdl, IConfiguration _configuration)
         {
             this.studentdl = studentdl;
+            this._configuration = _configuration;
         }
         //get
         public async Task<List<Student>> GetStudents()
@@ -24,9 +32,34 @@ namespace BL
         //getById
         public async Task<Student> GetStudentById(int id)
         {
-            return await studentdl.GetStudentById(id);
+            Student s= await studentdl.GetStudentById(id);
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration.GetSection("key").Value);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+                    new Claim(ClaimTypes.Name, s.Id.ToString())
+                }),
+                Expires = DateTime.UtcNow.AddDays(7),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            s.Token = tokenHandler.WriteToken(token);
+            return s;
         }
-        
+        //public static List<Student> WithoutPasswords(List<Student> students)
+        //{
+        //    return students.Select(x => WithoutPassword(x)).ToList();
+        //}
+
+        //public static Student WithoutPassword(Student student)
+        //{
+        //    student.Password = null;
+        //    return user;
+        //}
+
         // post
 
         public async Task<int> PostStudent(Student new_student)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 #nullable disable
@@ -37,5 +38,8 @@ namespace Entity
         public virtual ICollection<StudentComment> StudentComments { get; set; }
    
         public virtual ICollection<StudentYear> StudentYears { get; set; }
+
+        [NotMapped]
+        public string Token { get; set; }
     }
 }
